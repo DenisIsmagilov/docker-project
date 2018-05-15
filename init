@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+docker-compose stop
+group_id=$(id -g);
+user_id=$(id -u);
+export group_id user_id
+docker-compose up -d --build "$@"

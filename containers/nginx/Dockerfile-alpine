@@ -1,0 +1,13 @@
+FROM nginx:1.13-alpine
+
+ARG group_id
+ARG user_id
+
+COPY ./healthcheck.sh /
+
+RUN set -x \
+    && addgroup -g ${group_id} -S www-data \
+    && adduser -u ${user_id} -D -S -G www-data www-data \
+    && apk update \
+    && apk add curl \
+    && chmod +x /healthcheck.sh

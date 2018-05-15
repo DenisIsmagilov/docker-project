@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+docker exec -it meta_php-cli sh -c "cd /var/share && $*"
