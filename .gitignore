@@ -1,7 +1,1 @@
 .idea
-
-/app/*
-/pgdata/*
-/session/*
-/tmp/*
-/var/*
