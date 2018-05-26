@@ -17,17 +17,21 @@ RUN set -x \
         make \
         re2c \
         wget \
+    && apk add --no-cache --virtual .buildDeps-postgres \
+        postgresql-dev \
+    && apk add --no-cache --virtual .buildDeps-intl \
+        icu-dev \
     && apk add --no-cache --virtual .buildDeps-gd \
         freetype-dev \
         libjpeg-turbo-dev \
         libpng-dev \
         libwebp-dev \
-    && apk add --no-cache --virtual .buildDeps-postgres \
-        postgresql-dev \
-    && apk add --no-cache --virtual .buildDeps-intl \
-        icu-dev \
     && apk add --no-cache --virtual .buildDeps-gmagick \
         graphicsmagick-dev \
+#    && apk add --no-cache --virtual .buildDeps-imagick \
+#        imagemagick-dev \
+    && apk add --no-cache --virtual .buildDeps-memcached \
+        libmemcached-dev \
 #    && apk add --no-cache --virtual .buildDeps-pthreads \ #zts required
 #        pcre-dev \
     && apk add --no-cache --virtual .runtimeDeps \
@@ -35,22 +39,34 @@ RUN set -x \
         nodejs \
         nodejs-npm \
         yarn \
+        jpegoptim \
+        pngquant \
+        optipng \
+    && apk add --no-cache --virtual .runtimeDeps-postgres \
+        postgresql \
+    && apk add --no-cache --virtual .runtimeDeps-intl \
+        icu-libs \
     && apk add --no-cache --virtual .runtimeDeps-gd \
         freetype \
         libjpeg-turbo \
         libpng \
         libwebp \
-    && apk add --no-cache --virtual .runtimeDeps-postgres \
-        postgresql \
-    && apk add --no-cache --virtual .runtimeDeps-intl \
-        icu-libs \
     && apk add --no-cache --virtual .runtimeDeps-gmagick \
         libtool \
         libgomp \
         graphicsmagick \
+#    && apk add --no-cache --virtual .runtimeDeps-imagick \
+#        imagemagick \
     && apk add --no-cache --virtual .runtimeDeps-memcached \
-        cyrus-sasl-dev \
-        libmemcached-dev \
+        libmemcached-libs \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ --with-webp-dir=/usr/include/ \
+    && docker-php-ext-install -j${NPROC} pgsql pdo_pgsql intl opcache pcntl gd \
+    && pecl config-set php_ini /usr/local/etc/php/php.ini \
+    && pear config-set php_ini /usr/local/etc/php/php.ini \
+    && pecl install gmagick-beta \
+#    && pecl install imagick \
+    && pecl install memcached \
+#    && pecl install xdebug \
 #    && cd / \
 #    && git clone https://github.com/krakjoe/pthreads.git \
 #    && cd pthreads \
@@ -60,14 +76,8 @@ RUN set -x \
 #    && make install \
 #    && cd / \
 #    && rm -rf pthreads \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ --with-webp-dir=/usr/include/ \
-    && docker-php-ext-install -j${NPROC} gd pgsql pdo_pgsql intl opcache pcntl \
-    && pecl config-set php_ini /usr/local/etc/php/php.ini \
-    && pear config-set php_ini /usr/local/etc/php/php.ini \
-    && pecl install gmagick-beta \
-    && pecl install memcached \
-#    && pecl install xdebug \
     && docker-php-ext-enable gmagick \
+#    && docker-php-ext-enable imagick \
     && docker-php-ext-enable memcached \
 #    && docker-php-ext-enable xdebug \
 #    && docker-php-ext-enable pthreads \
@@ -81,42 +91,14 @@ RUN set -x \
 #    && chmod a+x /usr/local/bin/symfony \
     && apk del \
         .buildDeps \
-        .buildDeps-gd \
         .buildDeps-postgres \
         .buildDeps-intl \
+        .buildDeps-gd \
         .buildDeps-gmagick \
+#        .buildDeps-imagick \
+        .buildDeps-memcached \
 #        .buildDeps-pthreads \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/* \
     && php -m
 
 USER www-data
-
-#git \
-#libxml2-dev \
-#libtool \
-#libgomp \
-#openssl \
-#libmcrypt-dev \
-#libcurl \
-
-#buildDeps:
-    #autoconf \
-    #file \
-    #g++ \
-    #gcc \
-    #libc-dev \
-    #make \
-    #pkgconf \
-    #re2c \
-
-    #curl-dev \
-    #libedit-dev \
-    #libxml2-dev \
-    #openssl-dev \
-    #sqlite-dev \
-
-#runtimeDeps:
-    #ca-certificates
-    #curl
-    #tar
-    #xz
