@@ -2,4 +2,4 @@
 
 ## About
 
-Template for run php project development environment
+Template for run php project development environment in docker
