@@ -20,3 +20,5 @@ RUN set -x \
         postgresql-contrib \
 #    && psql -U postgres -d ${POSTGRES_DB} -c "CREATE EXTENSION ltree;" \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+
+USER postgres

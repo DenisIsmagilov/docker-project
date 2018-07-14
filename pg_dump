@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+docker exec -it meta_postgres sh -c "cd /var/lib/postgresql/backup && pg_dump \${POSTGRES_DB} -U \${POSTGRES_USER} -Fc -T 'logging*' -T 'reversions*' -T 'webhooks_logging*' > dump.gz"

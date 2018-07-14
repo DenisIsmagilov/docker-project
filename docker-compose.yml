@@ -21,8 +21,11 @@ services:
       retries: 3
     ports:
       - "5432:5432"
+    #volumes:
+    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
     volumes:
-      - ./pgdata:/var/lib/postgresql/data/pgdata:Z
+      - ./backup:/var/lib/postgresql/backup:Z
+      - pgdata:/var/lib/postgresql/data/pgdata:Z
     networks:
       - web
       - cli
@@ -164,3 +167,8 @@ networks:
     driver: bridge
   cli:
     driver: bridge
+
+volumes:
+  pgdata:
+    #external: true
+    name: "${COMPOSE_PROJECT_NAME}_pgdata"
