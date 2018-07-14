@@ -2,6 +2,7 @@
 
 /app/*
 /pgdata/*
-/session/*
+/sessions/*
 /tmp/*
 /var/*
+*.env

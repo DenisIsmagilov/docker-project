@@ -1,4 +1,4 @@
-FROM nginx:1.13-alpine
+FROM nginx:1.15-alpine
 
 ARG group_id
 ARG user_id
@@ -11,3 +11,5 @@ RUN set -x \
     && apk update \
     && apk add curl \
     && chmod +x /healthcheck.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
