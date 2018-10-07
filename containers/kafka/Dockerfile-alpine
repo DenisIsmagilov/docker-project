@@ -1,15 +1,11 @@
-FROM memcached:1.5-alpine
+FROM wurstmeister/kafka:2.11-2.0.0
 
 ARG host_group_id
 ARG host_user_id
 
-COPY --chown=memcache:memcache healthcheck.sh /usr/local/bin
-
-USER root
+COPY healthcheck.sh /usr/local/bin
 
 RUN set -x \
     && chmod +x /usr/local/bin/healthcheck.sh \
     && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-USER memcache

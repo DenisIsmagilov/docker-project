@@ -1,20 +1,21 @@
-FROM postgres:10.4-alpine
+FROM postgres:10.5-alpine
 
-ARG group_id
-ARG user_id
+ARG host_group_id
+ARG host_user_id
 
-COPY ./healthcheck.sh /
+COPY --chown=postgres:postgres healthcheck.sh /usr/local/bin
 
 RUN set -x \
     && OLD_UID=$(id -u postgres) \
     && OLD_GID=$(id -g postgres) \
     && deluser postgres \
-    && addgroup -g ${group_id} postgres \
-    && adduser -D -u ${user_id} -h /var/lib/postgresql -s /bin/sh -G postgres postgres \
+    && addgroup -g ${host_group_id} postgres \
+    && adduser -D -u ${host_user_id} -h /var/lib/postgresql -s /bin/sh -G postgres postgres \
     && find / -user ${OLD_UID} -exec chown postgres {} \; \
     && find / -group ${OLD_GID} -exec chgrp postgres {} \; \
-    && chmod +x /healthcheck.sh \
-    && NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) \
+    && chmod +x /usr/local/bin/healthcheck.sh \
+    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
+#    && NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) \
     && apk update \
     && apk add --no-cache --virtual .runtimeDeps \
         postgresql-contrib \

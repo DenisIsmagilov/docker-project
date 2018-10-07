@@ -1,15 +1,18 @@
 FROM nginx:1.15-alpine
 
-ARG group_id
-ARG user_id
+ARG host_group_id
+ARG host_user_id
 
-COPY ./healthcheck.sh /
+COPY --chown=nginx:nginx healthcheck.sh /usr/local/bin
 
 RUN set -x \
-    && addgroup -g ${group_id} -S www-data \
-    && adduser -u ${user_id} -D -S -G www-data www-data \
+    && addgroup -g ${host_group_id} -S www-data \
+    && adduser -u ${host_user_id} -D -S -G www-data www-data \
     && apk update \
-    && apk add curl \
-    && chmod +x /healthcheck.sh
+    && apk add --no-cache --virtual .runtimeDeps \
+        curl \
+    && chmod +x /usr/local/bin/healthcheck.sh \
+    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
+    && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

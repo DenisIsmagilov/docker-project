@@ -1,12 +1,18 @@
-FROM php:7.2-cli-alpine3.7
+FROM php:7.2-cli-alpine3.8
 
-ARG group_id
-ARG user_id
+ARG host_group_id
+ARG host_user_id
+
+COPY --chown=www-data:www-data healthcheck.sh /usr/local/bin
 
 RUN set -x \
+    && OLD_UID=$(id -u www-data) \
+    && OLD_GID=$(id -g www-data) \
     && deluser www-data \
-    && addgroup -g ${group_id} -S www-data \
-    && adduser -u ${user_id} -D -S -G www-data www-data \
+    && addgroup -g ${host_group_id} -S www-data \
+    && adduser -u ${host_user_id} -D -S -G www-data www-data \
+    && find / -user ${OLD_UID} -exec chown www-data {} \; \
+    && find / -group ${OLD_GID} -exec chgrp www-data {} \; \
     && NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) \
     && apk update \
     && apk add --no-cache --virtual .buildDeps \
@@ -26,6 +32,8 @@ RUN set -x \
         libjpeg-turbo-dev \
         libpng-dev \
         libwebp-dev \
+    && apk add --no-cache --virtual .buildDeps-soap \
+        libxml2-dev \
     && apk add --no-cache --virtual .buildDeps-gmagick \
         graphicsmagick-dev \
 #    && apk add --no-cache --virtual .buildDeps-imagick \
@@ -60,13 +68,14 @@ RUN set -x \
     && apk add --no-cache --virtual .runtimeDeps-memcached \
         libmemcached-libs \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ --with-webp-dir=/usr/include/ \
-    && docker-php-ext-install -j${NPROC} pgsql pdo_pgsql intl opcache pcntl gd \
+    && docker-php-ext-install -j${NPROC} pgsql pdo_pgsql intl opcache pcntl gd exif zip soap \
     && pecl config-set php_ini /usr/local/etc/php/php.ini \
     && pear config-set php_ini /usr/local/etc/php/php.ini \
     && pecl install gmagick-beta \
 #    && pecl install imagick \
     && pecl install memcached \
-#    && pecl install xdebug \
+    && pecl install redis \
+    && pecl install xdebug \
 #    && cd / \
 #    && git clone https://github.com/krakjoe/pthreads.git \
 #    && cd pthreads \
@@ -79,21 +88,22 @@ RUN set -x \
     && docker-php-ext-enable gmagick \
 #    && docker-php-ext-enable imagick \
     && docker-php-ext-enable memcached \
-#    && docker-php-ext-enable xdebug \
+    && docker-php-ext-enable redis \
+    && docker-php-ext-enable xdebug \
 #    && docker-php-ext-enable pthreads \
     && curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
-#    && composer global require "fxp/composer-asset-plugin:^1.2.0" \
     && wget https://phar.phpunit.de/phpunit.phar \
     && chmod +x phpunit.phar \
     && mv phpunit.phar /usr/local/bin/phpunit \
-#    && curl -LsS https://symfony.com/installer -o /usr/local/bin/symfony \
-#    && chmod a+x /usr/local/bin/symfony \
+    && chmod +x /usr/local/bin/healthcheck.sh \
+    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
     && apk del \
         .buildDeps \
         .buildDeps-postgres \
         .buildDeps-intl \
         .buildDeps-gd \
+        .buildDeps-soap \
         .buildDeps-gmagick \
 #        .buildDeps-imagick \
         .buildDeps-memcached \

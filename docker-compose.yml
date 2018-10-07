@@ -1,34 +1,19 @@
 version: "3.5"
 
 services:
-  postgres:
-    container_name: "${COMPOSE_PROJECT_NAME}_postgres"
+  memcached:
+    container_name: "${COMPOSE_PROJECT_NAME}_memcached"
     build:
-      context: ./containers/postgres
+      context: ./containers/memcached
       dockerfile: Dockerfile-alpine
-      args:
-        - group_id
-        - user_id
-    environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB}
+    command: ["memcached", "-m", "64m"]
     healthcheck:
-      test: ["CMD", "./healthcheck.sh"]
-      interval: 3m
-      timeout: 10s
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
       retries: 3
-    ports:
-      - "5432:5432"
-    #volumes:
-    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
-    volumes:
-      - ./backup:/var/lib/postgresql/backup:Z
-      - pgdata:/var/lib/postgresql/data/pgdata:Z
     networks:
-      - web
-      - cli
+      - memcached-net
     restart: "no"
 
   redis-session:
@@ -37,32 +22,185 @@ services:
       context: ./containers/redis
       dockerfile: Dockerfile-alpine
       args:
-        - group_id
-        - user_id
+        - host_group_id
+        - host_user_id
     healthcheck:
-      test: ["CMD", "./healthcheck.sh"]
-      interval: 3m
-      timeout: 10s
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
       retries: 3
     volumes:
       - ./sessions:/data:Z
     #  - ./containers/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
     #command: ["CMD", "redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - web
+      - redis-net
     #logging:
     #  driver: none
     restart: "no"
 
-  memcached:
-    container_name: "${COMPOSE_PROJECT_NAME}_memcached"
+  postgres:
+    container_name: "${COMPOSE_PROJECT_NAME}_postgres"
     build:
-      context: ./containers/memcached
+      context: ./containers/postgres
       dockerfile: Dockerfile-alpine
-    command: ["memcached", "-m", "64m"]
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    ports:
+      - 5432:5432
+    #volumes:
+    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
+    volumes:
+      - ./backup:/var/lib/postgresql/backup:Z
+      - pgdata:/var/lib/postgresql/data/pgdata:Z
     networks:
-      - web
+      - postgres-net
     restart: "no"
+
+  zookeeper1:
+    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper1"
+    build:
+      context: ./containers/zookeeper
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+    #volumes:
+    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+    networks:
+      - zookeeper-net
+    restart: "no"
+    hostname: zookeeper1
+    ports:
+      - 2181:2181
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  zookeeper2:
+    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper2"
+    build:
+      context: ./containers/zookeeper
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zookeeper3:2888:3888
+    #volumes:
+    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+    networks:
+      - zookeeper-net
+    restart: "no"
+    hostname: zookeeper2
+    ports:
+      - 2182:2181
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  zookeeper3:
+    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper3"
+    build:
+      context: ./containers/zookeeper
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=0.0.0.0:2888:3888
+    #volumes:
+    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+    networks:
+      - zookeeper-net
+    restart: "no"
+    hostname: zookeeper3
+    ports:
+      - 2183:2181
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  #kafka:
+  #  container_name: "${COMPOSE_PROJECT_NAME}_kafka"
+  #  build:
+  #    context: ./containers/kafka
+  #    dockerfile: Dockerfile-alpine
+  #    args:
+  #      - host_group_id
+  #      - host_user_id
+  #  environment:
+  #    KAFKA_ADVERTISED_HOST_NAME: kafka
+  #    KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
+  #    #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+  #  ports:
+  #    - 9092:9092
+  #  networks:
+  #    - zookeeper-net
+  #    - kafka-net
+  #  volumes:
+  #    - /var/run/docker.sock:/var/run/docker.sock
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh"]
+  #    interval: 30s
+  #    timeout: 5s
+  #    retries: 3
+  #  restart: "no"
+  #  depends_on:
+  #    - zookeeper1
+  #    - zookeeper2
+  #    - zookeeper3
+
+  php-cli:
+    container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
+    build:
+      context: ./containers/php-cli
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    volumes:
+      - ./app:/var/share:z
+      - ./tmp/:/tmp/:z
+      - ./var/tmp/:/var/tmp/:z
+      - ./containers/php-cli/conf/php.ini:/usr/local/etc/php/php.ini:ro
+    networks:
+      - memcached-net
+      - postgres-net
+      - kafka-net
+    tty: true
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    depends_on:
+      - memcached
+      - postgres
+      #- kafka
 
   php-fpm:
     container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
@@ -70,19 +208,30 @@ services:
       context: ./containers/php-fpm
       dockerfile: Dockerfile-alpine
       args:
-        - group_id
-        - user_id
+        - host_group_id
+        - host_user_id
     networks:
+      - memcached-net
+      - redis-net
+      - postgres-net
+      - kafka-net
       - web
     volumes:
       - ./app:/var/share:z
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
       - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: "no"
-    #depends_on:
-    #  postgres:
-    #    condition: service_healthy
+    depends_on:
+      - memcached
+      - redis-session
+      - postgres
+      #- kafka
 
   nginx:
     container_name: "${COMPOSE_PROJECT_NAME}_nginx"
@@ -90,8 +239,8 @@ services:
       context: ./containers/nginx
       dockerfile: Dockerfile-alpine
       args:
-        - group_id
-        - user_id
+        - host_group_id
+        - host_user_id
     environment:
       - NGINX_HOST=${NGINX_HOST}
       - NGINX_PORT=${NGINX_PORT}
@@ -100,12 +249,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - ENV_VAR_LIST=$$NGINX_HOST $$NGINX_PORT $$APP_ENV $$APP_SECRET $$DATABASE_URL
     healthcheck:
-      test: ["CMD", "./healthcheck.sh"]
-      interval: 3m
-      timeout: 10s
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
       retries: 3
     ports:
-      - "80:80"
+      - 80:80
     volumes:
       - ./app:/var/share:z
       - ./var/log/nginx:/var/log/nginx:Z
@@ -124,27 +273,8 @@ services:
     networks:
       - web
     restart: "no"
-    #depends_on:
-    #  php-fpm:
-    #    condition: service_healthy
-
-  php-cli:
-    container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
-    build:
-      context: ./containers/php-cli
-      dockerfile: Dockerfile-alpine
-      args:
-        - group_id
-        - user_id
-    volumes:
-      - ./app:/var/share:z
-      - ./tmp/:/tmp/:z
-      - ./var/tmp/:/var/tmp/:z
-      - ./containers/php-cli/conf/php.ini:/usr/local/etc/php/php.ini:ro
-    networks:
-      - cli
-    restart: "no"
-    tty: true
+    depends_on:
+      - php-fpm
 
   #pgadmin:
   #  container_name: "${COMPOSE_PROJECT_NAME}_pgadmin"
@@ -152,10 +282,10 @@ services:
   #    context: ./containers/pgadmin
   #    dockerfile: Dockerfile-alpine
   #    args:
-  #      - group_id
-  #      - user_id
+  #      - host_group_id
+  #      - host_user_id
   #  ports:
-  #    - "5050:5050"
+  #    - 5050:5050
   #  volumes:
   #    - ./pgadmin:/pgadmin:Z
   #  networks:
@@ -163,9 +293,17 @@ services:
   #  restart: "no"
 
 networks:
-  web:
+  memcached-net:
     driver: bridge
-  cli:
+  redis-net:
+    driver: bridge
+  postgres-net:
+    driver: bridge
+  zookeeper-net:
+    driver: bridge
+  kafka-net:
+    driver: bridge
+  web:
     driver: bridge
 
 volumes:

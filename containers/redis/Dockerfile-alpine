@@ -1,13 +1,11 @@
 FROM redis:4.0-alpine
 
-ARG group_id
-ARG user_id
+ARG host_group_id
+ARG host_user_id
 
-COPY ./healthcheck.sh /
+COPY --chown=redis:redis healthcheck.sh /usr/local/bin
 
 RUN set -x \
-    && addgroup -g ${group_id} -S www-data \
-    && adduser -u ${user_id} -D -S -G www-data www-data \
-    && chmod +x /healthcheck.sh
-
-USER www-data
+    && chmod +x /usr/local/bin/healthcheck.sh \
+    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
+    && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*

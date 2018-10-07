@@ -1,15 +1,11 @@
-FROM memcached:1.5-alpine
+FROM zookeeper:3.4
 
 ARG host_group_id
 ARG host_user_id
 
-COPY --chown=memcache:memcache healthcheck.sh /usr/local/bin
-
-USER root
+COPY --chown=zookeeper:zookeeper healthcheck.sh /usr/local/bin
 
 RUN set -x \
     && chmod +x /usr/local/bin/healthcheck.sh \
     && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-USER memcache
