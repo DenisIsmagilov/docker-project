@@ -85,8 +85,8 @@ services:
       - zookeeper-net
     restart: "no"
     hostname: zookeeper1
-    ports:
-      - 2181:2181
+    #ports:
+    #  - 2181:2181
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
@@ -110,8 +110,8 @@ services:
       - zookeeper-net
     restart: "no"
     hostname: zookeeper2
-    ports:
-      - 2182:2181
+    #ports:
+    #  - 2182:2181
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
@@ -135,43 +135,44 @@ services:
       - zookeeper-net
     restart: "no"
     hostname: zookeeper3
-    ports:
-      - 2183:2181
+    #ports:
+    #  - 2183:2181
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
       timeout: 5s
       retries: 3
 
-  #kafka:
-  #  container_name: "${COMPOSE_PROJECT_NAME}_kafka"
-  #  build:
-  #    context: ./containers/kafka
-  #    dockerfile: Dockerfile-alpine
-  #    args:
-  #      - host_group_id
-  #      - host_user_id
-  #  environment:
-  #    KAFKA_ADVERTISED_HOST_NAME: kafka
-  #    KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
-  #    #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
-  #  ports:
-  #    - 9092:9092
-  #  networks:
-  #    - zookeeper-net
-  #    - kafka-net
-  #  volumes:
-  #    - /var/run/docker.sock:/var/run/docker.sock
-  #  healthcheck:
-  #    test: ["CMD", "healthcheck.sh"]
-  #    interval: 30s
-  #    timeout: 5s
-  #    retries: 3
-  #  restart: "no"
-  #  depends_on:
-  #    - zookeeper1
-  #    - zookeeper2
-  #    - zookeeper3
+  kafka:
+    container_name: "${COMPOSE_PROJECT_NAME}_kafka"
+    build:
+      context: ./containers/kafka
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
+      #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+      #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
+    ports:
+      - 9092:9092
+    networks:
+      - zookeeper-net
+      - kafka-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: "no"
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
 
   php-cli:
     container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
