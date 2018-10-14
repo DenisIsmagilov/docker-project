@@ -39,6 +39,8 @@ RUN set -x \
 #        imagemagick-dev \
     && apk add --no-cache --virtual .buildDeps-memcached \
         libmemcached-dev \
+    && apk add --no-cache --virtual .buildDeps-rdkafka \
+        librdkafka-dev \
     && apk add --no-cache --virtual .runtimeDeps \
         jpegoptim \
         pngquant \
@@ -60,6 +62,8 @@ RUN set -x \
 #        imagemagick \
     && apk add --no-cache --virtual .runtimeDeps-memcached \
         libmemcached-libs \
+    && apk add --no-cache --virtual .runtimeDeps-rdkafka \
+        librdkafka \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ --with-webp-dir=/usr/include/ \
     && docker-php-ext-install -j${NPROC} pgsql pdo_pgsql intl opcache pcntl gd exif zip soap \
     && pecl config-set php_ini /usr/local/etc/php/php.ini \
@@ -67,11 +71,13 @@ RUN set -x \
     && pecl install gmagick-beta \
 #    && pecl install imagick \
     && pecl install memcached \
+    && pecl install rdkafka \
     && pecl install redis \
     && pecl install xdebug \
     && docker-php-ext-enable gmagick \
 #    && docker-php-ext-enable imagick \
     && docker-php-ext-enable memcached \
+    && docker-php-ext-enable rdkafka \
     && docker-php-ext-enable redis \
     && docker-php-ext-enable xdebug \
     && chmod +x /usr/local/bin/healthcheck.sh \
@@ -85,6 +91,7 @@ RUN set -x \
         .buildDeps-gmagick \
 #        .buildDeps-imagick \
         .buildDeps-memcached \
+        .buildDeps-rdkafka \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/* \
     && php -m
 
