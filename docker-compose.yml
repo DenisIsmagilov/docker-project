@@ -16,8 +16,8 @@ services:
       - memcached-net
     restart: "no"
 
-  redis-session:
-    container_name: "${COMPOSE_PROJECT_NAME}_redis-session"
+  redis:
+    container_name: "${COMPOSE_PROJECT_NAME}_redis"
     build:
       context: ./containers/redis
       dockerfile: Dockerfile-alpine
@@ -30,8 +30,9 @@ services:
       timeout: 5s
       retries: 3
     volumes:
-      - ./sessions:/data:Z
+    #  - ./sessions:/data:Z
     #  - ./containers/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data:Z
     #command: ["CMD", "redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
       - redis-net
@@ -48,7 +49,7 @@ services:
         - host_group_id
         - host_user_id
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/data
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
@@ -59,11 +60,10 @@ services:
       retries: 3
     ports:
       - 5432:5432
-    #volumes:
-    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
     volumes:
+    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
       - ./backup:/var/lib/postgresql/backup:Z
-      - pgdata:/var/lib/postgresql/data/pgdata:Z
+      - postgres_data:/var/lib/postgresql/data:Z
     networks:
       - postgres-net
     restart: "no"
@@ -79,8 +79,11 @@ services:
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
-    #volumes:
+    volumes:
     #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+      - zookeeper1_data:/data:Z
+      - zookeeper1_datalog:/datalog:Z
+      - zookeeper1_logs:/logs:Z
     networks:
       - zookeeper-net
     restart: "no"
@@ -104,8 +107,11 @@ services:
     environment:
       ZOO_MY_ID: 2
       ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zookeeper3:2888:3888
-    #volumes:
+    volumes:
     #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+      - zookeeper2_data:/data:Z
+      - zookeeper2_datalog:/datalog:Z
+      - zookeeper2_logs:/logs:Z
     networks:
       - zookeeper-net
     restart: "no"
@@ -129,8 +135,11 @@ services:
     environment:
       ZOO_MY_ID: 3
       ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=0.0.0.0:2888:3888
-    #volumes:
+    volumes:
     #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+      - zookeeper3_data:/data:Z
+      - zookeeper3_datalog:/datalog:Z
+      - zookeeper3_logs:/logs:Z
     networks:
       - zookeeper-net
     restart: "no"
@@ -156,6 +165,7 @@ services:
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
+      KAFKA_BROKER_ID: 1
       #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
       #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
     ports:
@@ -164,6 +174,7 @@ services:
       - zookeeper-net
       - kafka-net
     volumes:
+      - kafka_data:/kafka:Z
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
@@ -232,7 +243,7 @@ services:
     restart: "no"
     depends_on:
       - memcached
-      - redis-session
+      - redis
       - postgres
       #- kafka
 
@@ -310,6 +321,27 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
-    #external: true
-    name: "${COMPOSE_PROJECT_NAME}_pgdata"
+  redis_data:
+    name: "${COMPOSE_PROJECT_NAME}_redis_data"
+  postgres_data:
+    name: "${COMPOSE_PROJECT_NAME}_postgres_data"
+  zookeeper1_data:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_data"
+  zookeeper1_datalog:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_datalog"
+  zookeeper1_logs:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_logs"
+  zookeeper2_data:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_data"
+  zookeeper2_datalog:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_datalog"
+  zookeeper2_logs:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_logs"
+  zookeeper3_data:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_data"
+  zookeeper3_datalog:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_datalog"
+  zookeeper3_logs:
+    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_logs"
+  kafka_data:
+    name: "${COMPOSE_PROJECT_NAME}_kafka_data"
