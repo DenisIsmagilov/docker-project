@@ -99,6 +99,8 @@ RUN set -x \
 #    && docker-php-ext-enable pthreads \
     && curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
+    && composer global require hirak/prestissimo \
+    && composer clear-cache \
     && wget https://phar.phpunit.de/phpunit.phar \
     && chmod +x phpunit.phar \
     && mv phpunit.phar /usr/local/bin/phpunit \

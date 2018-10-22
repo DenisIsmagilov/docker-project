@@ -78,7 +78,8 @@ services:
         - host_user_id
     environment:
       ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+      #ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
     volumes:
     #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
       - zookeeper1_data:/data:Z
@@ -96,61 +97,61 @@ services:
       timeout: 5s
       retries: 3
 
-  zookeeper2:
-    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper2"
-    build:
-      context: ./containers/zookeeper
-      dockerfile: Dockerfile-alpine
-      args:
-        - host_group_id
-        - host_user_id
-    environment:
-      ZOO_MY_ID: 2
-      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zookeeper3:2888:3888
-    volumes:
-    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
-      - zookeeper2_data:/data:Z
-      - zookeeper2_datalog:/datalog:Z
-      - zookeeper2_logs:/logs:Z
-    networks:
-      - zookeeper-net
-    restart: "no"
-    hostname: zookeeper2
-    #ports:
-    #  - 2182:2181
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+  #zookeeper2:
+  #  container_name: "${COMPOSE_PROJECT_NAME}_zookeeper2"
+  #  build:
+  #    context: ./containers/zookeeper
+  #    dockerfile: Dockerfile-alpine
+  #    args:
+  #      - host_group_id
+  #      - host_user_id
+  #  environment:
+  #    ZOO_MY_ID: 2
+  #    ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=0.0.0.0:2888:3888 server.3=zookeeper3:2888:3888
+  #  volumes:
+  #  #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+  #    - zookeeper2_data:/data:Z
+  #    - zookeeper2_datalog:/datalog:Z
+  #    - zookeeper2_logs:/logs:Z
+  #  networks:
+  #    - zookeeper-net
+  #  restart: "no"
+  #  hostname: zookeeper2
+  #  #ports:
+  #  #  - 2182:2181
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh"]
+  #    interval: 30s
+  #    timeout: 5s
+  #    retries: 3
 
-  zookeeper3:
-    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper3"
-    build:
-      context: ./containers/zookeeper
-      dockerfile: Dockerfile-alpine
-      args:
-        - host_group_id
-        - host_user_id
-    environment:
-      ZOO_MY_ID: 3
-      ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=0.0.0.0:2888:3888
-    volumes:
-    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
-      - zookeeper3_data:/data:Z
-      - zookeeper3_datalog:/datalog:Z
-      - zookeeper3_logs:/logs:Z
-    networks:
-      - zookeeper-net
-    restart: "no"
-    hostname: zookeeper3
-    #ports:
-    #  - 2183:2181
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+  #zookeeper3:
+  #  container_name: "${COMPOSE_PROJECT_NAME}_zookeeper3"
+  #  build:
+  #    context: ./containers/zookeeper
+  #    dockerfile: Dockerfile-alpine
+  #    args:
+  #      - host_group_id
+  #      - host_user_id
+  #  environment:
+  #    ZOO_MY_ID: 3
+  #    ZOO_SERVERS: server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=0.0.0.0:2888:3888
+  #  volumes:
+  #  #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+  #    - zookeeper3_data:/data:Z
+  #    - zookeeper3_datalog:/datalog:Z
+  #    - zookeeper3_logs:/logs:Z
+  #  networks:
+  #    - zookeeper-net
+  #  restart: "no"
+  #  hostname: zookeeper3
+  #  #ports:
+  #  #  - 2183:2181
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh"]
+  #    interval: 30s
+  #    timeout: 5s
+  #    retries: 3
 
   kafka:
     container_name: "${COMPOSE_PROJECT_NAME}_kafka"
@@ -164,7 +165,8 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_PORT: 9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      #KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
       KAFKA_BROKER_ID: 1
       #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
       #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
@@ -184,8 +186,8 @@ services:
     restart: "no"
     depends_on:
       - zookeeper1
-      - zookeeper2
-      - zookeeper3
+      #- zookeeper2
+      #- zookeeper3
 
   php-cli:
     container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
@@ -331,17 +333,17 @@ volumes:
     name: "${COMPOSE_PROJECT_NAME}_zookeeper1_datalog"
   zookeeper1_logs:
     name: "${COMPOSE_PROJECT_NAME}_zookeeper1_logs"
-  zookeeper2_data:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_data"
-  zookeeper2_datalog:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_datalog"
-  zookeeper2_logs:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper2_logs"
-  zookeeper3_data:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_data"
-  zookeeper3_datalog:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_datalog"
-  zookeeper3_logs:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper3_logs"
+  #zookeeper2_data:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper2_data"
+  #zookeeper2_datalog:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper2_datalog"
+  #zookeeper2_logs:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper2_logs"
+  #zookeeper3_data:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper3_data"
+  #zookeeper3_datalog:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper3_datalog"
+  #zookeeper3_logs:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper3_logs"
   kafka_data:
     name: "${COMPOSE_PROJECT_NAME}_kafka_data"

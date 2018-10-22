@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-docker exec -it meta_postgres sh -c "cd /var/lib/postgresql/backup && pg_restore -d \${POSTGRES_DB} -U \${POSTGRES_USER} -j 8 dump.gz"
+export $(cat ./.env | grep -v ^# | xargs)
+
+docker exec -it "${COMPOSE_PROJECT_NAME}_postgres" sh -c "cd /var/lib/postgresql/backup && pg_restore -d \${POSTGRES_DB} -U \${POSTGRES_USER} -j 8 dump.gz"
