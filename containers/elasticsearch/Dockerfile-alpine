@@ -3,12 +3,10 @@ FROM elasticsearch:5.6-alpine
 ARG host_group_id
 ARG host_user_id
 
-COPY --chown=elasticsearch:elasticsearch healthcheck.sh /usr/local/bin
+COPY healthcheck.sh /usr/local/bin/
 
 RUN set -x \
     && apk update \
     && apk add --no-cache --virtual .runtimeDeps \
         curl \
-    && chmod +x /usr/local/bin/healthcheck.sh \
-    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*

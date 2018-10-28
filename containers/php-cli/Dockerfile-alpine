@@ -3,8 +3,6 @@ FROM php:7.2-cli-alpine3.8
 ARG host_group_id
 ARG host_user_id
 
-COPY --chown=www-data:www-data healthcheck.sh /usr/local/bin
-
 RUN set -x \
     && OLD_UID=$(id -u www-data) \
     && OLD_GID=$(id -g www-data) \
@@ -104,8 +102,6 @@ RUN set -x \
     && wget https://phar.phpunit.de/phpunit.phar \
     && chmod +x phpunit.phar \
     && mv phpunit.phar /usr/local/bin/phpunit \
-    && chmod +x /usr/local/bin/healthcheck.sh \
-    && ln -s /usr/local/bin/healthcheck.sh /healthcheck.sh \
     && apk del \
         .buildDeps \
         .buildDeps-postgres \
@@ -119,5 +115,3 @@ RUN set -x \
 #        .buildDeps-pthreads \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/* \
     && php -m
-
-USER www-data

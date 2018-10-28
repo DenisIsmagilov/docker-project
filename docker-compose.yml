@@ -197,22 +197,23 @@ services:
       args:
         - host_group_id
         - host_user_id
+    #environment:
+    #  - XDEBUG_CONFIG: "idekey=PHPSTORM remote_host=${host_ip}"
+    #  - PHP_IDE_CONFIG: serverName=${COMPOSE_PROJECT_NAME}
+    user: www-data
+    command: ["php", "-a"]
+    entrypoint: ["entrypoint.sh"]
     volumes:
       - ./app:/var/share:z
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
       - ./containers/php-cli/conf/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./containers/php-cli/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
     networks:
       - memcached-net
       - postgres-net
       - kafka-net
     tty: true
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: "no"
     depends_on:
       - memcached
       - postgres
@@ -237,12 +238,6 @@ services:
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
       - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: "no"
     depends_on:
       - memcached
       - redis
@@ -264,6 +259,8 @@ services:
       - APP_SECRET=${APP_SECRET}
       - DATABASE_URL=${DATABASE_URL}
       - ENV_VAR_LIST=$$NGINX_HOST $$NGINX_PORT $$APP_ENV $$APP_SECRET $$DATABASE_URL
+    command: ["nginx", "-g", "daemon off;"]
+    entrypoint: ["entrypoint.sh"]
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
@@ -274,18 +271,10 @@ services:
     volumes:
       - ./app:/var/share:z
       - ./var/log/nginx:/var/log/nginx:Z
-      - ./containers/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./containers/nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./containers/nginx/conf/app.conf:/etc/nginx/conf.d/app.conf.tmpl:ro
       - ./containers/nginx/conf/healthcheck.conf:/etc/nginx/conf.d/healthcheck.conf:ro
-      - ./containers/nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
-    #entrypoint: ["sh", "-c", 'echo "127.0.0.1    meta.local" >> /etc/hosts']
-    #entrypoint:
-    #  - /bin/sh
-    #  - -c
-    #  - |
-    #       echo "127.0.0.1    ${APP_HOST}" >> /etc/hosts
-    #command: /bin/sh -c "echo '127.0.0.1    meta.ru' >> /etc/hosts && nginx -g 'daemon off;'"
-    #command: /bin/sh -c "envsubst '$$NGINX_HOST $$NGINX_PORT $$APP_ENV $$APP_SECRET $$DATABASE_URL' < /etc/nginx/conf.d/app.conf.tmpl > /etc/nginx/conf.d/app.conf && exec nginx -g 'daemon off;'"
     networks:
       - web
     restart: "no"
