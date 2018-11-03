@@ -61,8 +61,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-    #  - ./pgdata:/var/lib/postgresql/data/pgdata:Z
-      - ./backup:/var/lib/postgresql/backup:Z
+      - ./backup:/var/lib/postgresql/backup
       - postgres_data:/var/lib/postgresql/data:Z
     networks:
       - postgres-net
@@ -170,6 +169,7 @@ services:
       KAFKA_BROKER_ID: 1
       #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
       #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
+    hostname: kafka
     ports:
       - 9092:9092
     networks:
@@ -188,6 +188,31 @@ services:
       - zookeeper1
       #- zookeeper2
       #- zookeeper3
+
+  php-fpm:
+    container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
+    build:
+      context: ./containers/php-fpm
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    networks:
+      - memcached-net
+      - redis-net
+      - postgres-net
+      - kafka-net
+      - web
+    volumes:
+      - ./app:/var/share:z
+      - ./tmp/:/tmp/:z
+      - ./var/tmp/:/var/tmp/:z
+      - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
+    depends_on:
+      - memcached
+      - redis
+      - postgres
+      #- kafka
 
   php-cli:
     container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
@@ -219,28 +244,29 @@ services:
       - postgres
       #- kafka
 
-  php-fpm:
-    container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
+  php-worker:
+    container_name: "${COMPOSE_PROJECT_NAME}_php-worker"
     build:
-      context: ./containers/php-fpm
+      context: ./containers/php-worker
       dockerfile: Dockerfile-alpine
       args:
         - host_group_id
         - host_user_id
-    networks:
-      - memcached-net
-      - redis-net
-      - postgres-net
-      - kafka-net
-      - web
+    #user: www-data
+    entrypoint: ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
     volumes:
       - ./app:/var/share:z
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
-      - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./containers/php-worker/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./containers/php-worker/supervisord.conf:/etc/supervisord.conf:ro
+      - ./containers/php-worker/conf:/etc/supervisor.d:ro
+    networks:
+      - memcached-net
+      - postgres-net
+      - kafka-net
     depends_on:
       - memcached
-      - redis
       - postgres
       #- kafka
 
@@ -270,7 +296,7 @@ services:
       - 80:80
     volumes:
       - ./app:/var/share:z
-      - ./var/log/nginx:/var/log/nginx:Z
+      - ./var/log/nginx:/var/log/nginx
       - ./containers/nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
       - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./containers/nginx/conf/app.conf:/etc/nginx/conf.d/app.conf.tmpl:ro
