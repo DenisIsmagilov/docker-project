@@ -177,7 +177,7 @@ services:
       - kafka-net
     volumes:
       - kafka_data:/kafka:Z
-      - /var/run/docker.sock:/var/run/docker.sock
+      #- /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
