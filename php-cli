@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export $(cat ./.env | grep -v ^# | xargs)
+
+docker exec -it "${COMPOSE_PROJECT_NAME}_php-cli" sh -c "cd ${SHARED_DIR} && $*"

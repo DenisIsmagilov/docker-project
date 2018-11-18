@@ -8,7 +8,7 @@ RUN set -x \
     && OLD_GID=$(id -g www-data) \
     && deluser www-data \
     && addgroup -g ${host_group_id} -S www-data \
-    && adduser -u ${host_user_id} -D -S -G www-data www-data \
+    && adduser -u ${host_user_id} -G www-data -D -S www-data \
     && find / -user ${OLD_UID} -exec chown www-data {} \; \
     && find / -group ${OLD_GID} -exec chgrp www-data {} \; \
     && NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) \
@@ -44,9 +44,6 @@ RUN set -x \
 #        pcre-dev \
     && apk add --no-cache --virtual .runtimeDeps \
         git \
-        nodejs \
-        nodejs-npm \
-        yarn \
         jpegoptim \
         pngquant \
         optipng \
@@ -114,4 +111,6 @@ RUN set -x \
         .buildDeps-rdkafka \
 #        .buildDeps-pthreads \
     && rm -rf /var/cache/apk/* /var/tmp/* /tmp/* \
+    && php -v \
+    && composer -V \
     && php -m

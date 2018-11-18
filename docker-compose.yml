@@ -189,30 +189,19 @@ services:
       #- zookeeper2
       #- zookeeper3
 
-  php-fpm:
-    container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
+  node-cli:
+    container_name: "${COMPOSE_PROJECT_NAME}_node-cli"
     build:
-      context: ./containers/php-fpm
+      context: ./containers/node-cli
       dockerfile: Dockerfile-alpine
       args:
         - host_group_id
         - host_user_id
-    networks:
-      - memcached-net
-      - redis-net
-      - postgres-net
-      - kafka-net
-      - web
+    user: node
     volumes:
-      - ./app:/var/share:z
-      - ./tmp/:/tmp/:z
-      - ./var/tmp/:/var/tmp/:z
-      - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
-    depends_on:
-      - memcached
-      - redis
-      - postgres
-      #- kafka
+      - ./app:${SHARED_DIR}:z
+    stdin_open: true
+    tty: true
 
   php-cli:
     container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
@@ -222,22 +211,23 @@ services:
       args:
         - host_group_id
         - host_user_id
-    #environment:
-    #  - XDEBUG_CONFIG: "idekey=PHPSTORM remote_host=${host_ip}"
-    #  - PHP_IDE_CONFIG: serverName=${COMPOSE_PROJECT_NAME}
+    environment:
+      XDEBUG_CONFIG: "remote_host=${DOCKER_HOST_IP}"
+      PHP_IDE_CONFIG: ${PHP_IDE_CONFIG}
     user: www-data
     command: ["php", "-a"]
     entrypoint: ["entrypoint.sh"]
     volumes:
-      - ./app:/var/share:z
+      - ./app:${SHARED_DIR}:z
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
-      - ./containers/php-cli/conf/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./containers/php-cli/php.ini:/usr/local/etc/php/php.ini:ro
       - ./containers/php-cli/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
     networks:
       - memcached-net
       - postgres-net
       - kafka-net
+    stdin_open: true
     tty: true
     depends_on:
       - memcached
@@ -255,7 +245,7 @@ services:
     #user: www-data
     entrypoint: ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
     volumes:
-      - ./app:/var/share:z
+      - ./app:${SHARED_DIR}:z
       - ./tmp/:/tmp/:z
       - ./var/tmp/:/var/tmp/:z
       - ./containers/php-worker/php.ini:/usr/local/etc/php/php.ini:ro
@@ -267,6 +257,34 @@ services:
       - kafka-net
     depends_on:
       - memcached
+      - postgres
+      #- kafka
+
+  php-fpm:
+    container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
+    build:
+      context: ./containers/php-fpm
+      dockerfile: Dockerfile-alpine
+      args:
+        - host_group_id
+        - host_user_id
+    environment:
+      #XDEBUG_CONFIG: "remote_host=${DOCKER_HOST_IP}"
+      PHP_IDE_CONFIG: ${PHP_IDE_CONFIG}
+    networks:
+      - memcached-net
+      - redis-net
+      - postgres-net
+      - kafka-net
+      - web
+    volumes:
+      - ./app:${SHARED_DIR}:z
+      - ./tmp/:/tmp/:z
+      - ./var/tmp/:/var/tmp/:z
+      - ./containers/php-fpm/conf/php.ini:/usr/local/etc/php/php.ini:ro
+    depends_on:
+      - memcached
+      - redis
       - postgres
       #- kafka
 
@@ -284,7 +302,8 @@ services:
       - APP_ENV=${APP_ENV}
       - APP_SECRET=${APP_SECRET}
       - DATABASE_URL=${DATABASE_URL}
-      - ENV_VAR_LIST=$$NGINX_HOST $$NGINX_PORT $$APP_ENV $$APP_SECRET $$DATABASE_URL
+      - SHARED_DIR=${SHARED_DIR}
+      - ENV_VAR_LIST=$$NGINX_HOST $$NGINX_PORT $$APP_ENV $$APP_SECRET $$DATABASE_URL $$SHARED_DIR
     command: ["nginx", "-g", "daemon off;"]
     entrypoint: ["entrypoint.sh"]
     healthcheck:
@@ -295,7 +314,7 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./app:/var/share:z
+      - ./app:${SHARED_DIR}:z
       - ./var/log/nginx:/var/log/nginx
       - ./containers/nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
       - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro

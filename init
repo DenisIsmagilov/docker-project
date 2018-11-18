@@ -21,8 +21,8 @@ docker-compose stop
 
 host_group_id=$(id -g);
 host_user_id=$(id -u);
-host_ip=$(ip -f inet addr show eth0 | grep -Po 'inet \K[\d.]+');
+docker_host_ip=$(ip -f inet addr show docker0 | grep -Po 'inet \K[\d.]+');
 
-export host_group_id host_user_id host_ip
+export host_group_id host_user_id docker_host_ip
 
-docker-compose up -d --build "$@"
+docker-compose up -d --build --remove-orphans "$@"
