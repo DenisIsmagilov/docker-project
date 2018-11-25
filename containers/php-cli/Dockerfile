@@ -3,6 +3,8 @@ FROM php:7.2-cli-alpine3.8
 ARG host_group_id
 ARG host_user_id
 
+ENV ZOOKEEPER_VER=3.4.13
+
 RUN set -x \
     && OLD_UID=$(id -u www-data) \
     && OLD_GID=$(id -g www-data) \
@@ -66,6 +68,14 @@ RUN set -x \
         libmemcached-libs \
     && apk add --no-cache --virtual .runtimeDeps-rdkafka \
         librdkafka \
+    && cd /tmp \
+    && wget -N -O- http://archive.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VER/zookeeper-$ZOOKEEPER_VER.tar.gz | tar zxvf - \
+    && cd zookeeper-$ZOOKEEPER_VER/src/c \
+    && ./configure --prefix=/usr/local/zookeeper \
+    && make -j${NPROC} \
+    && make install \
+    && cd /tmp \
+    && rm -rf /tmp/zookeeper-$ZOOKEEPER_VER \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ --with-webp-dir=/usr/include/ \
     && docker-php-ext-install -j${NPROC} pgsql pdo_pgsql intl opcache pcntl gd exif zip soap \
     && pecl config-set php_ini /usr/local/etc/php/php.ini \
@@ -76,21 +86,28 @@ RUN set -x \
     && pecl install rdkafka \
     && pecl install redis \
     && pecl install xdebug \
-#    && cd / \
-#    && git clone https://github.com/krakjoe/pthreads.git \
-#    && cd pthreads \
+    && git clone https://github.com/php-zookeeper/php-zookeeper.git /tmp/php-zookeeper \
+    && cd /tmp/php-zookeeper \
+    && phpize \
+    && ./configure --with-libzookeeper-dir=/usr/local/zookeeper \
+    && make -j${NPROC} \
+    && make install \
+    && cd /tmp \
+    && rm -rf /tmp/php-zookeeper \
+#    && git clone https://github.com/krakjoe/pthreads.git /tmp/pthreads \
+#    && cd /tmp/pthreads \
 #    && phpize \
 #    && ./configure --enable-pthreads \
 #    && make -j${NPROC} \
 #    && make install \
-#    && cd / \
-#    && rm -rf pthreads \
+#    && rm -rf /tmp/pthreads \
     && docker-php-ext-enable gmagick \
 #    && docker-php-ext-enable imagick \
     && docker-php-ext-enable memcached \
     && docker-php-ext-enable rdkafka \
     && docker-php-ext-enable redis \
     && docker-php-ext-enable xdebug \
+    && docker-php-ext-enable zookeeper \
 #    && docker-php-ext-enable pthreads \
     && curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \

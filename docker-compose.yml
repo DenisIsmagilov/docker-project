@@ -5,7 +5,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_memcached"
     build:
       context: ./containers/memcached
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
     command: ["memcached", "-m", "64m"]
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
@@ -20,7 +20,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_redis"
     build:
       context: ./containers/redis
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -44,7 +44,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_postgres"
     build:
       context: ./containers/postgres
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -67,40 +67,40 @@ services:
       - postgres-net
     restart: "no"
 
-  zookeeper1:
-    container_name: "${COMPOSE_PROJECT_NAME}_zookeeper1"
-    build:
-      context: ./containers/zookeeper
-      dockerfile: Dockerfile-alpine
-      args:
-        - host_group_id
-        - host_user_id
-    environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=0.0.0.0:2888:3888
-      #ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
-    volumes:
-    #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
-      - zookeeper1_data:/data:Z
-      - zookeeper1_datalog:/datalog:Z
-      - zookeeper1_logs:/logs:Z
-    networks:
-      - zookeeper-net
-    restart: "no"
-    hostname: zookeeper1
-    #ports:
-    #  - 2181:2181
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+  #zookeeper1:
+  #  container_name: "${COMPOSE_PROJECT_NAME}_zookeeper1"
+  #  build:
+  #    context: ./containers/zookeeper
+  #    dockerfile: Dockerfile
+  #    args:
+  #      - host_group_id
+  #      - host_user_id
+  #  environment:
+  #    ZOO_MY_ID: 1
+  #    ZOO_SERVERS: server.1=0.0.0.0:2888:3888
+  #    #ZOO_SERVERS: server.1=0.0.0.0:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+  #  volumes:
+  #  #  - ./containers/zookeeper/conf/zoo.cfg:/conf/zoo.cfg:ro
+  #    - zookeeper1_data:/data:Z
+  #    - zookeeper1_datalog:/datalog:Z
+  #    - zookeeper1_logs:/logs:Z
+  #  networks:
+  #    - zookeeper-net
+  #  restart: "no"
+  #  hostname: zookeeper1
+  #  #ports:
+  #  #  - 2181:2181
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh"]
+  #    interval: 30s
+  #    timeout: 5s
+  #    retries: 3
 
   #zookeeper2:
   #  container_name: "${COMPOSE_PROJECT_NAME}_zookeeper2"
   #  build:
   #    context: ./containers/zookeeper
-  #    dockerfile: Dockerfile-alpine
+  #    dockerfile: Dockerfile
   #    args:
   #      - host_group_id
   #      - host_user_id
@@ -128,7 +128,7 @@ services:
   #  container_name: "${COMPOSE_PROJECT_NAME}_zookeeper3"
   #  build:
   #    context: ./containers/zookeeper
-  #    dockerfile: Dockerfile-alpine
+  #    dockerfile: Dockerfile
   #    args:
   #      - host_group_id
   #      - host_user_id
@@ -152,48 +152,170 @@ services:
   #    timeout: 5s
   #    retries: 3
 
-  kafka:
-    container_name: "${COMPOSE_PROJECT_NAME}_kafka"
+  #kafka:
+  #  container_name: "${COMPOSE_PROJECT_NAME}_kafka"
+  #  build:
+  #    context: ./containers/kafka
+  #    dockerfile: Dockerfile
+  #    args:
+  #      - host_group_id
+  #      - host_user_id
+  #  environment:
+  #    KAFKA_ADVERTISED_HOST_NAME: kafka
+  #    KAFKA_ADVERTISED_PORT: 9092
+  #    KAFKA_PORT: 9092
+  #    KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+  #    #KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
+  #    KAFKA_BROKER_ID: 1
+  #    #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+  #    #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
+  #  hostname: kafka
+  #  ports:
+  #    - 9092:9092
+  #  networks:
+  #    - zookeeper-net
+  #    - kafka-net
+  #  volumes:
+  #    - kafka_data:/kafka:Z
+  #    #- /var/run/docker.sock:/var/run/docker.sock
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh"]
+  #    interval: 30s
+  #    timeout: 5s
+  #    retries: 3
+  #  restart: "no"
+  #  depends_on:
+  #    - zookeeper1
+  #    #- zookeeper2
+  #    #- zookeeper3
+
+  confluent-zookeeper:
+    container_name: "${COMPOSE_PROJECT_NAME}_confluent-zookeeper"
     build:
-      context: ./containers/kafka
-      dockerfile: Dockerfile-alpine
-      args:
-        - host_group_id
-        - host_user_id
+      context: ./containers/confluent-zookeeper
+      dockerfile: Dockerfile
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_PORT: 9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
-      #KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181/kafka,zookeeper2:2181/kafka,zookeeper3:2181/kafka
-      KAFKA_BROKER_ID: 1
-      #HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
-      #HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
-    hostname: kafka
-    ports:
-      - 9092:9092
-    networks:
-      - zookeeper-net
-      - kafka-net
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    hostname: confluent-zookeeper
     volumes:
-      - kafka_data:/kafka:Z
-      #- /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    restart: "no"
+      - confluent-zookeeper_data:/var/lib/zookeeper/data:Z
+      - confluent-zookeeper_log:/var/lib/zookeeper/log:Z
+      - confluent-zookeeper_secrets:/etc/zookeeper/secrets:Z
+    networks:
+      - confluent-zookeeper-net
+
+  confluent-kafka:
+    container_name: "${COMPOSE_PROJECT_NAME}_confluent-kafka"
+    build:
+      context: ./containers/confluent-kafka
+      dockerfile: Dockerfile
+    hostname: confluent-kafka
+    #ports:
+    #  - 9092:9092
+    #  - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: confluent-zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://confluent-kafka:9092
+      #KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://confluent-kafka:9092,PLAINTEXT_HOST://localhost:29092
+      #KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      #KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      #KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      #CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: confluent-kafka:9092
+      #CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: confluent-zookeeper:2181
+      #CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      #CONFLUENT_METRICS_ENABLE: 'true'
+      #CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    volumes:
+      - confluent-kafka_data:/var/lib/kafka/data:Z
+      - confluent-kafka_secrets:/etc/kafka/secrets:Z
+    networks:
+      - confluent-zookeeper-net
     depends_on:
-      - zookeeper1
-      #- zookeeper2
-      #- zookeeper3
+      - confluent-zookeeper
+
+  confluent-schema:
+    container_name: "${COMPOSE_PROJECT_NAME}_confluent-schema"
+    build:
+      context: ./containers/confluent-schema
+      dockerfile: Dockerfile
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: confluent-schema
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: confluent-zookeeper:2181
+    hostname: confluent-schema
+    #ports:
+    #  - 8081:8081
+    volumes:
+      - confluent-schema_secrets:/etc/schema-registry/secrets:Z
+    networks:
+      - confluent-zookeeper-net
+    depends_on:
+      - confluent-zookeeper
+      - confluent-kafka
+
+  confluent-rest:
+    container_name: "${COMPOSE_PROJECT_NAME}_confluent-rest"
+    build:
+      context: ./containers/confluent-rest
+      dockerfile: Dockerfile
+    environment:
+      KAFKA_REST_ZOOKEEPER_CONNECT: confluent-zookeeper:2181
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://confluent-schema:8081
+      KAFKA_REST_HOST_NAME: confluent-rest
+      KAFKA_REST_BOOTSTRAP_SERVERS: confluent-kafka:9092
+    hostname: confluent-rest
+    #ports:
+    #  - 8082:8082
+    networks:
+      - confluent-zookeeper-net
+      - confluent-rest-net
+    depends_on:
+      - confluent-zookeeper
+      - confluent-kafka
+      - confluent-schema
+
+  confluent-control:
+    container_name: "${COMPOSE_PROJECT_NAME}_confluent-control"
+    build:
+      context: ./containers/confluent-control
+      dockerfile: Dockerfile
+    environment:
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: confluent-zookeeper:2181
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: confluent-kafka:9092
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: 2
+    #  CONTROL_CENTER_CONNECT_CLUSTER: confluent-connect:8083
+    #  CONTROL_CENTER_KSQL_URL: confluent-ksql:8088
+    #  CONTROL_CENTER_KSQL_ADVERTISED_URL: http://localhost:8088
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+    hostname: confluent-control
+    ports:
+      - 9021:9021
+    volumes:
+      - /tmp/control-center/data:/var/lib/confluent-control-center:Z
+    networks:
+      - confluent-zookeeper-net
+    ulimits:
+      nofile:
+        soft: 16384
+        hard: 16384
+    depends_on:
+      - confluent-zookeeper
+      - confluent-kafka
+      - confluent-schema
 
   node-cli:
     container_name: "${COMPOSE_PROJECT_NAME}_node-cli"
     build:
       context: ./containers/node-cli
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -207,7 +329,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_php-cli"
     build:
       context: ./containers/php-cli
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -226,7 +348,8 @@ services:
     networks:
       - memcached-net
       - postgres-net
-      - kafka-net
+#      - kafka-net
+      - confluent-rest-net
     stdin_open: true
     tty: true
     depends_on:
@@ -238,7 +361,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_php-worker"
     build:
       context: ./containers/php-worker
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -254,7 +377,8 @@ services:
     networks:
       - memcached-net
       - postgres-net
-      - kafka-net
+#      - kafka-net
+      - confluent-rest-net
     depends_on:
       - memcached
       - postgres
@@ -264,7 +388,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_php-fpm"
     build:
       context: ./containers/php-fpm
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -275,7 +399,8 @@ services:
       - memcached-net
       - redis-net
       - postgres-net
-      - kafka-net
+#      - kafka-net
+      - confluent-rest-net
       - web
     volumes:
       - ./app:${SHARED_DIR}:z
@@ -292,7 +417,7 @@ services:
     container_name: "${COMPOSE_PROJECT_NAME}_nginx"
     build:
       context: ./containers/nginx
-      dockerfile: Dockerfile-alpine
+      dockerfile: Dockerfile
       args:
         - host_group_id
         - host_user_id
@@ -330,7 +455,7 @@ services:
   #  container_name: "${COMPOSE_PROJECT_NAME}_pgadmin"
   #  build:
   #    context: ./containers/pgadmin
-  #    dockerfile: Dockerfile-alpine
+  #    dockerfile: Dockerfile
   #    args:
   #      - host_group_id
   #      - host_user_id
@@ -349,9 +474,13 @@ networks:
     driver: bridge
   postgres-net:
     driver: bridge
-  zookeeper-net:
+  #zookeeper-net:
+  #  driver: bridge
+  #kafka-net:
+  #  driver: bridge
+  confluent-zookeeper-net:
     driver: bridge
-  kafka-net:
+  confluent-rest-net:
     driver: bridge
   web:
     driver: bridge
@@ -361,12 +490,12 @@ volumes:
     name: "${COMPOSE_PROJECT_NAME}_redis_data"
   postgres_data:
     name: "${COMPOSE_PROJECT_NAME}_postgres_data"
-  zookeeper1_data:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_data"
-  zookeeper1_datalog:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_datalog"
-  zookeeper1_logs:
-    name: "${COMPOSE_PROJECT_NAME}_zookeeper1_logs"
+  #zookeeper1_data:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper1_data"
+  #zookeeper1_datalog:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper1_datalog"
+  #zookeeper1_logs:
+  #  name: "${COMPOSE_PROJECT_NAME}_zookeeper1_logs"
   #zookeeper2_data:
   #  name: "${COMPOSE_PROJECT_NAME}_zookeeper2_data"
   #zookeeper2_datalog:
@@ -379,5 +508,17 @@ volumes:
   #  name: "${COMPOSE_PROJECT_NAME}_zookeeper3_datalog"
   #zookeeper3_logs:
   #  name: "${COMPOSE_PROJECT_NAME}_zookeeper3_logs"
-  kafka_data:
-    name: "${COMPOSE_PROJECT_NAME}_kafka_data"
+  #kafka_data:
+  #  name: "${COMPOSE_PROJECT_NAME}_kafka_data"
+  confluent-zookeeper_data:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-zookeeper_data"
+  confluent-zookeeper_log:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-zookeeper_log"
+  confluent-zookeeper_secrets:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-zookeeper_secrets"
+  confluent-kafka_data:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-kafka_data"
+  confluent-kafka_secrets:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-kafka_secrets"
+  confluent-schema_secrets:
+    name: "${COMPOSE_PROJECT_NAME}_confluent-schema_secrets"
