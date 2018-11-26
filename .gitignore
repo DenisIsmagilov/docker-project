@@ -2,5 +2,6 @@
 /backup/*
 /log/*
 /tmp/*
+/var/*
 *.env
 /app/*
