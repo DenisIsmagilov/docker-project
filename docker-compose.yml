@@ -509,7 +509,7 @@ services:
       - ./log/nginx:/var/log/nginx:Z
       - ./containers/nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
       - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./containers/nginx/conf:/etc/nginx/conf.d:ro
+      - ./containers/nginx/conf:/etc/nginx/tmpl:ro
     networks:
       - web
     restart: "no"
