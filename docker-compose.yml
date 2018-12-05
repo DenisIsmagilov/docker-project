@@ -73,11 +73,6 @@ services:
     #  SERVER_HOST: localhost
     #  SERVER_NAME: kibana
     #  ELASTICSEARCH_URL: elasticsearch:9200
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     ports:
       - 5601:5601
     networks:
@@ -281,6 +276,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: confluent-zookeeper:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://confluent-kafka:9092
+      KAFKA_ACKS: 'all'
+      KAFKA_ENABLE_IDEMPOTENCE: 'true'
       #KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://confluent-kafka:9092,PLAINTEXT_HOST://localhost:29092
       #KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       #KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
@@ -314,6 +311,7 @@ services:
       - confluent-schema_secrets:/etc/schema-registry/secrets:Z
     networks:
       - confluent-zookeeper-net
+      - confluent-rest-net
     depends_on:
       - confluent-zookeeper
       - confluent-kafka
